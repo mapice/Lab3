@@ -1,0 +1,119 @@
+#________               .__                ____     ____
+#\______ \   ___________|__|_____ ___.__. /_   |   /_   |
+# |    |  \_/ __ \_  __ \  \____ <   |  |  |   |    |   |
+# |    `   \  ___/|  | \/  |  |_> >___  |  |   |    |   |
+#/_______  /\___  >__|  |__|   __// ____|  |___| /\ |___|
+#        \/     \/         |__|   \/             \/
+
+
+#Questa è la versione aggiornata con quasi tutte le funzioni che vi potrebbero saltare in mente, probabilmente molte di più di quelle che ci serviranno in tutta la nostra vita. L'unica difficoltà è utilizzare alcune di queste funzioni con l'opportuna sintassi, non per forza intuitiva.
+
+
+#Di seguito un paio di note utili per usare il codice:
+
+#   1)Per scrivere una frazione si usa lo schema frac(Rational(a,b)) ed è consigliato non inserire variabili all'interno di rational ma raggruppare tutte le costanti nella frazione
+#   2)Per qualche motivo ignoto la parola \frac non viene riportata per intero nel compiler ma viene omessa la f, motivo per il quale ho staccato \ da frac, bisogna ricordarsi dunque di cancellare quel piccolo spazio rimasto.
+#   3)I log, exp e alcune funzioni goniometriche più sofisticate potrebbero dare qualche problema ogni tanto nel calcolo
+#   4)Le funzioni riportate al punto 3 danno un ulteriore problema (facilmente aggirabile) in Latex. Ad esempio la fuzione atan viene restituita nella forma \operatorname{atan}, problema probabilmente legato alla funzione latex di sympy. Per ovviare a ciò basta inserire \ prima di tale funzione e cancellare manualmente \operatorname (che tuttavia fornisce la parola atan, ma risulta meno elegamente del comando \atan)
+#   5)Per chiarimenti sull'uso delle funzioni e sul loro comando, questo è il link ufficiale della suite sympy:
+#     https://docs.sympy.org/latest/modules/functions/elementary.html
+
+# __      __             __     .__
+#/  \    /  \___________|  | __ |__| ____   _____________  ____   ___________   ____   ______ ______
+#\   \/\/   /  _ \_  __ \  |/ / |  |/    \  \____ \_  __ \/  _ \ / ___\_  __ \_/ __ \ /  ___//  ___/
+# \        (  <_> )  | \/    <  |  |   |  \ |  |_> >  | \(  <_> ) /_/  >  | \/\  ___/ \___ \ \___ \
+#  \__/\  / \____/|__|  |__|_ \ |__|___|  / |   __/|__|   \____/\___  /|__|    \___  >____  >____  >
+#       \/                   \/         \/  |__|               /_____/             \/     \/     \/
+#      .__                .__             _____.__
+#___  _|__|__  _______    |  | _____    _/ ____\__| ____ _____
+#\  \/ /  \  \/ /\__  \   |  | \__  \   \   __\|  |/ ___\\__  \
+# \   /|  |\   /  / __ \_ |  |__/ __ \_  |  |  |  \  \___ / __ \_
+#  \_/ |__| \_/  (____  / |____(____  /  |__|  |__|\___  >____  /
+ #                    \/            \/                 \/     \/
+
+#Buon divertimento dottori!
+
+
+
+from sympy import *
+import numpy as np
+from sympy import symbols, cos, sin, tan, atan, cosh, sinh,acosh, asinh,log, re, im, I, E, Abs, diff, arg, conjugate, cot, sec, csc, acot, asec, acsc, tanh, sech,csch, atanh, acoth,asech, acsch, ceiling, floor, frac, exp, exp_polar, pi, Piecewise, Min, Max, root, Rational, sqrt
+
+miss=[45,34,2] #valori misure
+err=[0,001.20,0.01] #relativi errori
+err=np.array(err)
+mis=np.array(miss)
+
+x, y, z = symbols('x y z', real=True) #le lettere x,y,z vengono trasformate in simboli con cui la funzione lambdify sa lavorare
+
+
+
+f =(cos(x*y*z))*2*tan(x)**sin(y+2) #l'espressione di cui vogliamo trovare l'errore
+
+
+
+xprime = f.diff(x) #la derivata simbolica
+a=lambdify([x,y,z], xprime, 'numpy') #la conversione in variabili di calcolo
+
+yprime = f.diff(y)
+b=lambdify([x,y,z], yprime, 'numpy')
+
+zprime = f.diff(z)
+c=lambdify([x,y,z], zprime, 'numpy')
+
+#di seguito printiamo l'espressione simbolica delle derivate parziali
+print("\033[1m Derivate simboliche \033[0m \n ",xprime, " \n partial x \n ")
+print(yprime, "\n partial y \n")
+print(zprime, "\n partial z \n \n \n \n")
+
+#printiamo ora le stesse derivate ma in forma copypastabile su editor latex:
+print("\033[1m Latex \033[0m \n ","$","\ frac{\partial f}{\partial x} = ", latex(xprime)," $","\n x \n ")
+print("$","\ frac{\partial f}{\partial y} = ", latex(yprime)," $", "\n y \n ")
+print("$","\ frac{\partial f}{\partial z} = ", latex(zprime)," $","\n z \n \n \n \n")
+
+#qui invece printiamo le derivate nei rispettivi valori forniti in "mis"
+print( "\033[1m Derivate valutate in mis \033[0m \n",a(mis[0],mis[1],mis[2]), " x")
+print( b(mis[0],mis[1],mis[2]), " y")
+print( c(mis[0],mis[1],mis[2]), " z \n \n")
+
+#nominiamo in maniera più pratica i valori ottenuti:
+
+xx=a(mis[0],mis[1],mis[2])
+yy=b(mis[0],mis[1],mis[2])
+zz=c(mis[0],mis[1],mis[2])
+var=[xx,yy,zz]
+var=np.array(var)
+
+#facciamo un ciclo per calcolare la somma in quadratura pesata con le rispettive varianze
+
+m=[]
+i=0
+for i in range(3):
+    k= (var[i]*var[i]) * (err[i]* err[i])
+    m.append(k)
+
+m=np.array(m)
+mm=sum(m) #la somma pesata in quadratura
+print(round(np.sqrt(mm),3), "\033[1m  errore desiderato \033[0m") #questo è l'errore su f con l'opportuna approssimazione, se si desiderato più o meno cifre significative basta cambiare il numerino nella funzione round
+
+
+#
+#
+#
+# _____                         _    _
+#|  _  |___ _ _ _ ___ ___ ___ _| |  | |_ _ _
+#|   __| . | | | | -_|  _| -_| . |  | . | | |
+#|__|  |___|_____|___|_| |___|___|  |___|_  |
+#                                       |___|
+# __    __  ______  ______ ______ __  ______       ______  ______ __  ______  ______  __      __      ______
+#/\ "-./  \/\  __ \/\__  _/\__  _/\ \/\  __ \     /\  __ \/\  == /\ \/\  ___\/\  ___\/\ \    /\ \    /\  __ \
+#\ \ \-./\ \ \  __ \/_/\ \\/_/\ \\ \ \ \  __ \    \ \  __ \ \  _-\ \ \ \ \___\ \  __\\ \ \___\ \ \___\ \  __ \
+# \ \_\ \ \_\ \_\ \_\ \ \_\  \ \_\\ \_\ \_\ \_\    \ \_\ \_\ \_\  \ \_\ \_____\ \_____\ \_____\ \_____\ \_\ \_\
+#  \/_/  \/_/\/_/\/_/  \/_/   \/_/ \/_/\/_/\/_/     \/_/\/_/\/_/   \/_/\/_____/\/_____/\/_____/\/_____/\/_/\/_/
+#
+#
+#
+#
+#
+#
+#
